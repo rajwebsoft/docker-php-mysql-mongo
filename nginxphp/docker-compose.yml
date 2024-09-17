@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+
+    # PHP service
+    app:
+        build: .
+        container_name: php-application
+        working_dir: /var/www/
+        volumes:
+            - ./www/:/var/www
+        networks:
+            - app-network
+            - shared-network
+
+    # Nginx service
+    nginx:
+        image: nginx:alpine
+        container_name: php-nginx-application
+        ports:
+            - 8018:80
+        volumes:
+            - ./www/:/var/www
+            - ./nginx/conf.d/:/etc/nginx/conf.d/
+        networks:
+            - app-network
+            - shared-network
+    
+
+networks:
+    app-network:
+        driver: bridge
+    shared-network:
+        external: true

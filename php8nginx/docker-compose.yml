@@ -1,0 +1,80 @@
+version: "3.8"
+services:
+
+    # PHP service
+    app:
+        build: .
+        container_name: php-app
+        working_dir: /var/www/
+        volumes:
+            - ./www/:/var/www
+        networks:
+            - app-network
+            - shared-network
+
+    # MySQL database service
+    db:
+        platform: linux/x86_64
+        image: mysql:5.7
+        container_name: mysql-db
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        env_file:
+            - ./.env
+        volumes:
+            - ./data/mysql_data:/var/lib/mysql
+            - ./data/mysql-conf/my.cnf:/etc/mysql/conf.d/my.cnf
+        networks:
+            - app-network
+            - shared-network
+
+    # Nginx service
+    nginx:
+        image: nginx:alpine
+        container_name: php-nginx
+        ports:
+            - 8014:80
+        volumes:
+            - ./www/:/var/www
+            - ./nginx/conf.d/:/etc/nginx/conf.d/
+        networks:
+            - app-network
+
+    # phpMyAdmin service
+    phpmyadmin:
+        platform: linux/x86_64
+        image: phpmyadmin/phpmyadmin:latest
+        container_name: phpmyadmin
+        environment:
+            PMA_HOST: db
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        env_file:
+            - ./.env
+        ports:
+            - "8012:80"
+        depends_on:
+            - db
+        networks:
+            - app-network
+
+    # MongoDB service
+    mongo:
+        image: mongo:7.0
+        container_name: mongodb
+        ports:
+            - "27019:27017"
+        volumes:
+            - ./data/mongo_data:/data/db
+        networks:
+            - app-network
+
+networks:
+    app-network:
+        driver: bridge
+    shared-network:
+        external: true
